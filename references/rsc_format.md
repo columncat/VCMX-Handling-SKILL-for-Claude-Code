@@ -57,14 +57,20 @@ It has an **outer** tree structure and, embedded in it, **escaped XML** program 
   → `rsclib.has_empty_signal` / `dangling_signal_stmts`. These raise VC "No signal selected".
 
 ## Workers
-- Two worker resources (transport controllers). Current names: **`Worker Ctrl #1`** (=Worker 1) and
-  **`Worker Ctrl #2`** (=Worker 2). Older models named them `Human Transport Controller[ #2]`.
-  Their component metadata (`BOMname`/`BOMdescription "...Human Transport Controller"`) is cosmetic —
-  not a worker reference, leave it.
-- A **Work** step's worker = its `IWorkStatement` `Controller` (deterministic).
-- A **Transport** step's worker at runtime is chosen dynamically (shortest-travel: `ShortestTravelReply`
-  signal). Logs hardcode an approximate 담당; to make logs match a plan, use the schedule's assignment.
+- Two worker resources. Names vary by model: **`Worker Ctrl #1`**/**`Worker Ctrl #2`**, or in the robot
+  models **`Worker Ctrl #1`** (=schedule Worker 1) + **`Robot Ctrl`** (=Worker 2, a robot arm). Older models:
+  `Human Transport Controller[ #2]`. `BOMname`/`BOMdescription` metadata is cosmetic — leave it.
+- A **Work** step's worker = its `IWorkStatement` `Controller` (deterministic; set per schedule).
+- A **Transport** step's worker = the matching **`TransportLink`'s `Implementer`** (an outer-layer block:
+  `TransportLink { Id "…" Implementer "…::TC" Source "<physNode>::TransportNode" Destination "<physNode>" SupportedGroup "…" }`).
+  ⚠️ Source/Destination are **PHYSICAL node names** (e.g. `Kitchen Sink #2`), not the process names in the
+  schedule — build a process→node map to find the link for a transport `A→B`. (Some models also have a
+  dynamic `ShortestTravelReply` fallback, but the Implementer is the assignment.)
+- ⚠️ **`Robot Ctrl` is transport-only**: giving it a **Work** task crashes its TaskLogic at runtime
+  (`_write_task_action` → `KeyError: 'NoneType'`). Keep Work tasks on the human controller. See signals ref.
 - `Reserve/ReleaseResource` sends (Component = a worker) reserve a worker around a step.
+- **`IsEnabled=False` on any statement = disabled/commented-out (inert).** Always audit `IsEnabled` on the
+  statements you rely on after an edit — a needed Wait/Send silently toggled off breaks the chain. See signals ref.
 
 ## Product types
 - Product type **names are not stored plainly**. GUIDs appear in `ProcessFlowGroups` (per menu) and in
